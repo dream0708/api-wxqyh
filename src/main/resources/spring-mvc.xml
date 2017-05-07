@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+	xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:aop="http://www.springframework.org/schema/aop" 
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:oxm="http://www.springframework.org/schema/oxm" 
+	xmlns:mvc="http://www.springframework.org/schema/mvc"
+	xsi:schemaLocation="http://www.springframework.org/schema/mvc  
+                http://www.springframework.org/schema/mvc/spring-mvc-4.0.xsd  
+                http://www.springframework.org/schema/beans
+                http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+                http://www.springframework.org/schema/tx
+                http://www.springframework.org/schema/tx/spring-tx-4.0.xsd  
+                http://www.springframework.org/schema/aop
+                http://www.springframework.org/schema/aop/spring-aop-4.0.xsd  
+                http://www.springframework.org/schema/context
+                http://www.springframework.org/schema/context/spring-context-4.0.xsd
+                http://www.springframework.org/schema/oxm
+                http://www.springframework.org/schema/oxm/spring-oxm-4.0.xsd"
+	default-lazy-init="false">
+	<!-- 注解扫描包 子容器  过滤父容器serivce 不然事务不能自动提交 -->
+	<context:component-scan base-package="com.jee">
+		<context:include-filter type="annotation"
+			expression="org.springframework.stereotype.Controller" />
+		<context:include-filter type="annotation" 
+		    expression="org.springframework.web.bind.annotation.ControllerAdvice"/>  
+		<context:exclude-filter type="annotation"
+			expression="org.springframework.stereotype.Service" />
+	</context:component-scan>
+	
+    <mvc:annotation-driven>
+	    <mvc:async-support default-timeout="80000">
+	       <mvc:deferred-result-interceptors>
+	         <bean class="com.jee.rest.base.interceptor.AsyncTimeOutInterceptor"></bean>
+	       </mvc:deferred-result-interceptors>
+        </mvc:async-support>
+        <mvc:argument-resolvers>
+             <bean class="com.jee.rest.base.handler.valid.RequestParameterValidHandler"></bean>
+             <bean class="com.jee.api.wxqyh.handler.QyhSessionAccess"></bean>
+        </mvc:argument-resolvers>
+		<mvc:message-converters register-defaults="true">
+		    <!-- StringHttpMessageConverter编码为UTF-8，防止乱码 -->
+            <bean class="org.springframework.http.converter.StringHttpMessageConverter">
+                <constructor-arg value="UTF-8"/>
+                <property name = "supportedMediaTypes">
+                    <list>
+                        <bean class="org.springframework.http.MediaType">
+                            <constructor-arg index="0" value="text"/>
+                            <constructor-arg index="1" value="plain"/>
+                            <constructor-arg index="2" value="UTF-8"/>
+                        </bean>
+                        <bean class="org.springframework.http.MediaType">
+                            <constructor-arg index="0" value="*"/>
+                            <constructor-arg index="1" value="*"/>
+                            <constructor-arg index="2" value="UTF-8"/>
+                        </bean>
+                    </list>
+                </property>
+            </bean>
+			<!-- 避免IE执行AJAX时,返回JSON出现下载文件 使用 fastJson -->
+			<bean
+				class="com.alibaba.fastjson.support.spring.FastJsonHttpMessageConverter">
+				<property name="supportedMediaTypes">
+					<list>
+					    <value>text/html;charset=UTF-8</value> <!-- 顺序也不能换 -->
+					    <value>application/json;charset=UTF-8</value>
+					</list>
+				</property>
+				<!-- 加入features后 返回给前端是一个string 需要先转成Json -->
+				<property name="features">
+				    <list>
+				        <value>WriteMapNullValue</value>
+				        <value>WriteNullStringAsEmpty</value>
+				        <value>WriteNullListAsEmpty</value>
+				    </list>
+				</property>
+			</bean>
+		</mvc:message-converters>
+	</mvc:annotation-driven> 
+    <mvc:resources mapping="/resource/**" location="/resource/"/>
+    <mvc:resources mapping="/css/**" location="/css/"/>
+	<mvc:resources mapping="/dist/**" location="/dist/"/>
+	<mvc:resources mapping="/js/**" location="/js/"/>
+	<mvc:resources mapping="/image/**" location="/image/"/>
+	<mvc:resources mapping="/page/**" location="/page/"/>
+    <!-- 上传文件异常处理 -->
+	<bean id="exceptionResolver"
+		class="org.springframework.web.servlet.handler.SimpleMappingExceptionResolver">
+		<property name="exceptionMappings">
+			<props>
+				<prop
+					key="org.springframework.web.multipart.MaxUploadSizeExceededException">exception/file_error</prop>
+			</props>
+		</property>
+	</bean>
+	<!-- 日志拦截器配置方法 -->
+	<mvc:interceptors>
+	   <mvc:interceptor>
+	     <mvc:mapping path="/**"/>
+	     <mvc:exclude-mapping path="/resource/**"/>
+	
+	         <bean class="com.jee.rest.base.interceptor.AsyncLoggerInterceptor">
+	           <property name="sensitives"> 
+	              <list>
+	                 <value>pwd</value>
+	                 <value>password</value>
+	                 <value>secret</value>
+	              </list>
+	           </property>
+	           <property name="zip" value="false"></property> 
+	         </bean>
+	   </mvc:interceptor>
+	</mvc:interceptors>
+	
+	
+</beans>
