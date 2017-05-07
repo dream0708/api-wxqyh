@@ -13,10 +13,17 @@ public class ServerStartupListener implements ApplicationListener<ContextRefresh
 	
 	private Logger logger = LogManager.getLogger(ServerStartupListener.class); 
 	
+	private static boolean started = false ;
 	
     @Override
     public void onApplicationEvent(ContextRefreshedEvent event) {
     	logger.info(".....Spring 容器启动完成.....");
+    	if(!started){
+    		
+    		
+    		
+    		started = true ; //防止重复初始化
+    	}
     	
     	logger.info(".....加入一些数据初始化工作.....");
     }

@@ -1,5 +1,6 @@
 package com.jee.api.wxqyh.controller;
 
+import java.util.List;
 import java.util.Map;
 
 import javax.annotation.Resource;
@@ -186,13 +187,16 @@ public class WxqyhController {
 			JSONObject ds = wxqyhService.getDetailUserInfo(accessToken, userId) ;
 			logger.info("detail user info:{}" , ds);
 			if(ds != null && ds.getIntValue("errcode") == 0){
-				QyhUser user = new QyhUser() ;
+				QyhUser user = new QyhUser() ; //拼装QyhUser对象 存到redis中
+				
+				
 				
 				sessionService.createSession(user) ;
 				return new BizResult<JSONObject>()
 						   .success("登录成功")
 						   .data(ds)
-						   .sessionid(user.getSessionid()) ;
+						   .sessionid(user.getSessionid())
+						   .hash(user.getHash()) ;
 			}else{
 				return new BizResult<JSONObject>().failure("登录失败") ;
 			}
@@ -207,6 +211,23 @@ public class WxqyhController {
 	@RequestMapping("/detail")
 	public BizResult<QyhUser> getDetailUser(@QyhSession(detail = true) QyhUser user ){
 		return new BizResult<QyhUser>().success("查询成功").data(user) ;
+	}
+	
+	
+	
+	
+	@RequestMapping("/detail")
+	public BizResult<QyhUser> updateUserInfo(@QyhSession(hash = true) QyhUser user ){
+		String nickName = user.getAttribute("nickName") ;  //session操作  类似HttpSession
+		int money = user.getInt("money" , 0) ;
+		money += 15 ;
+		user.setAttribute("money", money);
+		List<String> days = user.getList("days", String.class) ;
+				
+		
+		
+		
+		return new BizResult<QyhUser>().success().data(user) ;
 	}
 	
 
